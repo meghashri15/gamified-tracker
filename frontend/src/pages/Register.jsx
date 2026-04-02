@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { mockRegister } from '../services/api'
 import { useStore } from '../store/useStore'
+import toast from 'react-hot-toast'
 
 export default function Register() {
   const [name,  setName]  = useState('')
@@ -9,12 +10,14 @@ export default function Register() {
   const { reloadForUser } = useStore()
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!name.trim() || !email.trim()) return
-    await mockRegister(name, email)
-    reloadForUser()          // load this user's data into the store
-    window.location.href = '/'
-  }
+  e.preventDefault()
+  if (!name.trim()) return toast.error('Please enter your name')
+  if (!email.trim()) return toast.error('Please enter your email')
+  if (!email.includes('@')) return toast.error('Please enter a valid email')
+  await mockRegister(name, email)
+  reloadForUser()
+  window.location.href = '/'
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

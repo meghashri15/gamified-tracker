@@ -15,21 +15,14 @@ export default function App() {
 
   // Fix 3: apply dark mode class on every render, not just toggle
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [darkMode])
-
-  // also apply immediately on first load
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('gp-state') || '{}')
-    if (saved.darkMode) {
-      document.documentElement.classList.add('dark')
-    }
-  }, [])
-
+  const global = JSON.parse(localStorage.getItem('gp-global') || '{}')
+  const isDark = global.darkMode ?? false
+  if (isDark) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}, [])
   const user = getUser()
 
   return (

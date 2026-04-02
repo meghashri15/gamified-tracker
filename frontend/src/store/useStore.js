@@ -78,7 +78,7 @@ export const useStore = create((set, get) => ({
   streak:         saved.streak         || 0,
   totalDone:      saved.totalDone      || 0,
   unlockedBadges: saved.unlockedBadges || [],
-  darkMode:       safeGet('gp-global').darkMode ?? false,
+  darkMode: safeGet('gp-global').darkMode ?? false,
   showConfetti:   false,
   levelledUp:     false,
   leaderboard:    buildLeaderboard(saved.xp || 0, saved.level || 1),
@@ -118,42 +118,65 @@ export const useStore = create((set, get) => ({
   },
 
   completeTask: (id) => {
-    const task = get().tasks.find(t => t.id === id)
-    if (!task || task.completed) return
+  const task = get().tasks.find(t => t.id === id)
+  if (!task || task.completed) return
 
-    const tasks     = get().tasks.map(t => t.id === id ? { ...t, completed: true } : t)
-    const newXP     = get().xp + (task.xpValue || 10)
-    const newLevel  = calcLevel(newXP)
-    const newTotal  = get().totalDone + 1
-    const newStreak = get().streak + 1
-    const levelled  = newLevel > get().level
+  const tasks    = get().tasks.map(t => t.id === id ? { ...t, completed: true } : t)
+  const newXP    = get().xp + (task.xpValue || 10)
+  const newLevel = calcLevel(newXP)
+  const newTotal = get().totalDone + 1
+  const levelled = newLevel > get().level
 
-    const unlockedBadges = BADGES
-      .filter(b => b.condition(newXP, newTotal, newLevel, newStreak))
-      .map(b => b.id)
+  // Streak logic — only increases ONCE per calendar day
+  const today     = new Date().toDateString()
+  const lastDay   = safeGet(`gp-state-${getUserEmail()}`).lastStreakDate || ''
+  const yesterday = new Date(Date.now() - 86400000).toDateString()
 
-    const leaderboard = buildLeaderboard(newXP, newLevel)
+  let newStreak = get().streak
+  if (lastDay === today) {
+    // already completed a task today — don't increase streak
+    newStreak = get().streak
+  } else if (lastDay === yesterday) {
+    // completed yesterday — continue streak
+    newStreak = get().streak + 1
+  } else if (lastDay === '') {
+    // first ever task
+    newStreak = 1
+  } else {
+    // missed a day — reset streak
+    newStreak = 1
+  }
 
-    set({
-      tasks, xp: newXP, level: newLevel,
-      totalDone: newTotal, streak: newStreak,
-      unlockedBadges, leaderboard,
-      showConfetti: true, levelledUp: levelled,
-    })
-    saveUserState({
-      tasks, xp: newXP, level: newLevel,
-      totalDone: newTotal, streak: newStreak, unlockedBadges
-    })
-    setTimeout(() => set({ showConfetti: false, levelledUp: false }), 4000)
-  },
+  const unlockedBadges = BADGES
+    .filter(b => b.condition(newXP, newTotal, newLevel, newStreak))
+    .map(b => b.id)
 
-  toggleDark: () => {
-    const darkMode = !get().darkMode
-    set({ darkMode })
-    const global = safeGet('gp-global')
-    localStorage.setItem('gp-global', JSON.stringify({ ...global, darkMode }))
-    document.documentElement.classList.toggle('dark', darkMode)
-  },
+  const leaderboard = buildLeaderboard(newXP, newLevel)
+
+  set({
+    tasks, xp: newXP, level: newLevel,
+    totalDone: newTotal, streak: newStreak,
+    unlockedBadges, leaderboard,
+    showConfetti: true, levelledUp: levelled,
+  })
+  saveUserState({
+    tasks, xp: newXP, level: newLevel,
+    totalDone: newTotal, streak: newStreak,
+    unlockedBadges, lastStreakDate: today
+  })
+  setTimeout(() => set({ showConfetti: false, levelledUp: false }), 4000)
+},
+toggleDark: () => {
+  const darkMode = !get().darkMode
+  set({ darkMode })
+  const global = safeGet('gp-global')
+  localStorage.setItem('gp-global', JSON.stringify({ ...global, darkMode }))
+  if (darkMode) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+},
 
   xpForNextLevel: () => xpForNextLevel(get().level),
 }))

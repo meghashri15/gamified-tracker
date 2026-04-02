@@ -29,10 +29,14 @@ export default function Navbar() {
         <span className="text-sm text-gray-500 dark:text-gray-400">Lv.{level} · {xp} XP</span>
         {user && <span className="text-sm font-medium">{user.name}</span>}
         <button onClick={toggleDark} className="text-xl">{darkMode ? '☀️' : '🌙'}</button>
-        <button onClick={() => { logout(); navigate('/login') }}
-          className="text-sm bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-          Logout
-        </button>
+        <button
+  onClick={() => {
+    logout()
+    window.location.href = '/login'
+  }}
+  className="text-sm bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+  Logout
+</button>
       </div>
     </nav>
   )
