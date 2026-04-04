@@ -1,48 +1,86 @@
 import axios from 'axios'
 
-const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://gamified-tracker-hplq.onrender.com/api'
-})
+// ✅ This points to your real deployed backend on Render
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://gamified-tracker-hplq.onrender.com'
 
-API.interceptors.request.use(config => {
+const api = axios.create({ baseURL: BASE_URL })
+
+// ✅ Automatically attach the JWT token to every request
+api.interceptors.request.use(config => {
   const token = localStorage.getItem('gp-token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-export const register = (name, email, password) =>
-  API.post('/auth/register', { name, email, password })
+// ─── Auth ────────────────────────────────────────────────────────────────────
 
-export const login = (email, password) =>
-  API.post('/auth/login', { email, password })
-
-export const getTasks = () => API.get('/tasks')
-export const createTask = (title, category) => API.post('/tasks', { title, category, xpValue: 10 })
-export const updateTask = (id, data) => API.put(`/tasks/${id}`, data)
-export const deleteTask = (id) => API.delete(`/tasks/${id}`)
-
-export const getStats = () => API.get('/user/stats')
-export const completeTaskAPI = (xpValue) => API.post('/user/complete-task', { xpValue })
-export const getLeaderboard = () => API.get('/user/leaderboard')
-
-export const mockLogin = (email) => {
-  const name = email.split('@')[0]
-  localStorage.setItem('gp-user', JSON.stringify({ email, name }))
-  return Promise.resolve({ user: { email, name } })
+export async function register(name, email, password) {
+  const res = await api.post('/api/auth/register', { name, email, password })
+  // Save token and user info so the app knows you're logged in
+  localStorage.setItem('gp-token', res.data.token)
+  localStorage.setItem('gp-user',  JSON.stringify(res.data.user))
+  return res.data
 }
 
-export const mockRegister = (name, email) => {
-  localStorage.setItem('gp-user', JSON.stringify({ name, email }))
-  return Promise.resolve({ user: { name, email } })
+export async function login(email, password) {
+  const res = await api.post('/api/auth/login', { email, password })
+  localStorage.setItem('gp-token', res.data.token)
+  localStorage.setItem('gp-user',  JSON.stringify(res.data.user))
+  return res.data
 }
 
-export const getUser = () => {
+export function logout() {
+  localStorage.removeItem('gp-token')
+  localStorage.removeItem('gp-user')
+}
+
+export function getUser() {
   try {
     return JSON.parse(localStorage.getItem('gp-user') || 'null')
-  } catch { return null }
+  } catch {
+    return null
+  }
 }
 
-export const logout = () => {
-  localStorage.removeItem('gp-user')
-  localStorage.removeItem('gp-token')
+export function getToken() {
+  return localStorage.getItem('gp-token')
+}
+
+// ─── Tasks ───────────────────────────────────────────────────────────────────
+
+export async function getTasks() {
+  const res = await api.get('/api/tasks')
+  return res.data
+}
+
+export async function createTask(title, category) {
+  const res = await api.post('/api/tasks', { title, category })
+  return res.data
+}
+
+export async function updateTask(id, updates) {
+  const res = await api.put(`/api/tasks/${id}`, updates)
+  return res.data
+}
+
+export async function deleteTaskAPI(id) {
+  const res = await api.delete(`/api/tasks/${id}`)
+  return res.data
+}
+
+// ─── User / Gamification ─────────────────────────────────────────────────────
+
+export async function getStats() {
+  const res = await api.get('/api/user/stats')
+  return res.data
+}
+
+export async function completeTaskAPI(taskId, xpValue = 10) {
+  const res = await api.post('/api/user/complete-task', { taskId, xpValue })
+  return res.data
+}
+
+export async function getLeaderboard() {
+  const res = await api.get('/api/user/leaderboard')
+  return res.data
 }
