@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
   streak:   { type: Number, default: 0 },
   totalDone:{ type: Number, default: 0 },
   badges:   [{ type: String }],
-  lastActiveDate: { type: String, default: '' }
+  lastActiveDate: { type: String, default: '' }   // stores e.g. "Sat Apr 05 2025"
 }, { timestamps: true })
 
 module.exports = mongoose.model('User', UserSchema)

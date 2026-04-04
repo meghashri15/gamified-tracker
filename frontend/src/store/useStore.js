@@ -1,10 +1,10 @@
 import { create } from 'zustand'
 
 const BADGES = [
-  { id: 1, name: 'First Step',    desc: 'Complete your first task',  condition: (xp)            => xp >= 10,  icon: '🏅' },
-  { id: 2, name: 'On a Roll',     desc: 'Complete 5 tasks',          condition: (_, t)           => t >= 5,   icon: '🔥' },
-  { id: 3, name: 'Level Up',      desc: 'Reach level 2',             condition: (_, __, l)       => l >= 2,   icon: '⬆️' },
-  { id: 4, name: 'Streak Master', desc: '3-day streak',              condition: (_, __, ___, s)  => s >= 3,   icon: '📅' },
+  { id: 1, name: 'First Step',    desc: 'Complete your first task',  condition: (xp)            => xp >= 10,   icon: '🏅' },
+  { id: 2, name: 'On a Roll',     desc: 'Complete 5 tasks',          condition: (_, t)           => t >= 5,    icon: '🔥' },
+  { id: 3, name: 'Level Up',      desc: 'Reach level 2',             condition: (_, __, l)       => l >= 2,    icon: '⬆️' },
+  { id: 4, name: 'Streak Master', desc: '3-day streak',              condition: (_, __, ___, s)  => s >= 3,    icon: '📅' },
   { id: 5, name: 'XP Grinder',    desc: 'Earn 100 XP',               condition: (xp)            => xp >= 100, icon: '💎' },
 ]
 
@@ -21,7 +21,6 @@ function xpForNextLevel(level) {
   return thresholds[Math.min(level - 1, 4)]
 }
 
-// Safe localStorage read — never crashes
 function safeGet(key) {
   try { return JSON.parse(localStorage.getItem(key) || '{}') } catch { return {} }
 }
@@ -68,7 +67,6 @@ function buildLeaderboard(myXP, myLevel) {
   }
 }
 
-// Load initial state safely
 const saved = loadUserState()
 
 export const useStore = create((set, get) => ({
@@ -78,13 +76,11 @@ export const useStore = create((set, get) => ({
   streak:         saved.streak         || 0,
   totalDone:      saved.totalDone      || 0,
   unlockedBadges: saved.unlockedBadges || [],
-  darkMode: safeGet('gp-global').darkMode ?? false,
   showConfetti:   false,
   levelledUp:     false,
   leaderboard:    buildLeaderboard(saved.xp || 0, saved.level || 1),
   badges:         BADGES,
 
-  // Call this right after login/register so store loads the correct user's data
   reloadForUser: () => {
     const s = loadUserState()
     const xp    = s.xp    || 0
@@ -101,7 +97,7 @@ export const useStore = create((set, get) => ({
   },
 
   addTask: (title, category = 'General') => {
-    const task  = {
+    const task = {
       id: Date.now(), title, category,
       completed: false, xpValue: 10,
       createdAt: new Date().toISOString()
@@ -118,65 +114,54 @@ export const useStore = create((set, get) => ({
   },
 
   completeTask: (id) => {
-  const task = get().tasks.find(t => t.id === id)
-  if (!task || task.completed) return
+    const task = get().tasks.find(t => t.id === id)
+    if (!task || task.completed) return
 
-  const tasks    = get().tasks.map(t => t.id === id ? { ...t, completed: true } : t)
-  const newXP    = get().xp + (task.xpValue || 10)
-  const newLevel = calcLevel(newXP)
-  const newTotal = get().totalDone + 1
-  const levelled = newLevel > get().level
+    const tasks    = get().tasks.map(t => t.id === id ? { ...t, completed: true } : t)
+    const newXP    = get().xp + (task.xpValue || 10)
+    const newLevel = calcLevel(newXP)
+    const newTotal = get().totalDone + 1
+    const levelled = newLevel > get().level
 
-  // Streak logic — only increases ONCE per calendar day
-  const today     = new Date().toDateString()
-  const lastDay   = safeGet(`gp-state-${getUserEmail()}`).lastStreakDate || ''
-  const yesterday = new Date(Date.now() - 86400000).toDateString()
+    // ✅ Streak logic — only increases ONCE per calendar day (like Duolingo)
+    const today     = new Date().toDateString()   // e.g. "Sat Apr 05 2025"
+    const yesterday = new Date(Date.now() - 86400000).toDateString()
+    const lastDay   = loadUserState().lastStreakDate || ''
 
-  let newStreak = get().streak
-  if (lastDay === today) {
-    // already completed a task today — don't increase streak
-    newStreak = get().streak
-  } else if (lastDay === yesterday) {
-    // completed yesterday — continue streak
-    newStreak = get().streak + 1
-  } else if (lastDay === '') {
-    // first ever task
-    newStreak = 1
-  } else {
-    // missed a day — reset streak
-    newStreak = 1
-  }
+    let newStreak = get().streak
+    if (lastDay === today) {
+      // Already did a task today — streak stays the same
+      newStreak = get().streak
+    } else if (lastDay === yesterday) {
+      // Did something yesterday — keep the streak alive!
+      newStreak = get().streak + 1
+    } else if (lastDay === '') {
+      // Very first task ever
+      newStreak = 1
+    } else {
+      // Missed a day — reset to 1 (harsh but fair, like Duolingo 😅)
+      newStreak = 1
+    }
 
-  const unlockedBadges = BADGES
-    .filter(b => b.condition(newXP, newTotal, newLevel, newStreak))
-    .map(b => b.id)
+    const unlockedBadges = BADGES
+      .filter(b => b.condition(newXP, newTotal, newLevel, newStreak))
+      .map(b => b.id)
 
-  const leaderboard = buildLeaderboard(newXP, newLevel)
+    const leaderboard = buildLeaderboard(newXP, newLevel)
 
-  set({
-    tasks, xp: newXP, level: newLevel,
-    totalDone: newTotal, streak: newStreak,
-    unlockedBadges, leaderboard,
-    showConfetti: true, levelledUp: levelled,
-  })
-  saveUserState({
-    tasks, xp: newXP, level: newLevel,
-    totalDone: newTotal, streak: newStreak,
-    unlockedBadges, lastStreakDate: today
-  })
-  setTimeout(() => set({ showConfetti: false, levelledUp: false }), 4000)
-},
-toggleDark: () => {
-  const darkMode = !get().darkMode
-  set({ darkMode })
-  const global = safeGet('gp-global')
-  localStorage.setItem('gp-global', JSON.stringify({ ...global, darkMode }))
-  if (darkMode) {
-    document.documentElement.classList.add('dark')
-  } else {
-    document.documentElement.classList.remove('dark')
-  }
-},
+    set({
+      tasks, xp: newXP, level: newLevel,
+      totalDone: newTotal, streak: newStreak,
+      unlockedBadges, leaderboard,
+      showConfetti: true, levelledUp: levelled,
+    })
+    saveUserState({
+      tasks, xp: newXP, level: newLevel,
+      totalDone: newTotal, streak: newStreak,
+      unlockedBadges, lastStreakDate: today,
+    })
+    setTimeout(() => set({ showConfetti: false, levelledUp: false }), 4000)
+  },
 
   xpForNextLevel: () => xpForNextLevel(get().level),
 }))

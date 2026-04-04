@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Confetti from 'react-confetti'
@@ -11,28 +10,16 @@ import Register from './pages/Register'
 import { getUser } from './services/api'
 
 export default function App() {
-  const { darkMode, showConfetti } = useStore()
-
-  // Fix 3: apply dark mode class on every render, not just toggle
-  useEffect(() => {
-  const global = JSON.parse(localStorage.getItem('gp-global') || '{}')
-  const isDark = global.darkMode ?? false
-  if (isDark) {
-    document.documentElement.classList.add('dark')
-  } else {
-    document.documentElement.classList.remove('dark')
-  }
-}, [])
+  const { showConfetti } = useStore()
   const user = getUser()
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
+      <div className="min-h-screen bg-gray-50 text-gray-900">
         {showConfetti && <Confetti recycle={false} numberOfPieces={300} />}
         <Toaster position="top-right" />
         {user && <Navbar />}
         <Routes>
-          {/* Fix 1: /register must come BEFORE the catch-all, and must not redirect logged-in users away */}
           <Route path="/login"    element={!user ? <Login />    : <Navigate to="/" />} />
           <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
           <Route path="/"         element={user  ? <Dashboard /> : <Navigate to="/login" />} />
