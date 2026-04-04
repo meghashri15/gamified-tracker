@@ -1,32 +1,34 @@
 import { useStore } from '../store/useStore'
 
+const MEDALS = ['🥇', '🥈', '🥉']
+
 export default function Leaderboard() {
   const { leaderboard } = useStore()
-  const medals = ['🥇', '🥈', '🥉']
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-800">
-      <h3 className="font-semibold mb-4">Leaderboard</h3>
-      <div className="space-y-3">
-        {leaderboard.map((u, i) => (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <h3 className="font-semibold text-gray-700 text-sm mb-4">Leaderboard</h3>
+      <div className="flex flex-col gap-2">
+        {leaderboard.map((entry, i) => (
           <div
-            key={u.name}
-            className={`flex items-center justify-between p-3 rounded-xl transition-colors
-              ${u.isYou
-                ? 'bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800'
-                : 'bg-gray-50 dark:bg-gray-800'}`}
+            key={entry.name}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
+              entry.isYou
+                ? 'bg-purple-50 border border-purple-200'
+                : 'bg-gray-50'
+            }`}
           >
-            <div className="flex items-center gap-3">
-              <span className="text-lg w-6 text-center">
-                {medals[i] || `#${i + 1}`}
-              </span>
-              <span className={`font-medium ${u.isYou ? 'text-purple-600 dark:text-purple-400' : ''}`}>
-                {u.name}
-              </span>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-semibold">{u.xp} XP</div>
-              <div className="text-xs text-gray-400">Level {u.level}</div>
+            <span className="text-lg w-6 text-center flex-shrink-0">
+              {MEDALS[i] || <span className="text-sm text-gray-400">{i + 1}</span>}
+            </span>
+            <span className={`flex-1 text-sm font-medium truncate ${
+              entry.isYou ? 'text-purple-600' : 'text-gray-700'
+            }`}>
+              {entry.name} {entry.isYou && '(you)'}
+            </span>
+            <div className="text-right flex-shrink-0">
+              <div className="text-xs font-semibold text-yellow-500">{entry.xp} XP</div>
+              <div className="text-xs text-gray-400">Lv.{entry.level}</div>
             </div>
           </div>
         ))}
