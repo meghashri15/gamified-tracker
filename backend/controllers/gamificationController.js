@@ -1,5 +1,5 @@
 const User = require('../models/User')
-const Task = require('../models/Task')   // ← NEW LINE ADDED
+const Task = require('../models/Task')
 
 function calcLevel(xp) {
   if (xp < 50)  return 1
@@ -24,32 +24,38 @@ exports.completeTask = async (req, res) => {
     const xpGain = req.body.xpValue || 10
     const newXP  = user.xp + xpGain
 
-    const today     = new Date().toDateString()
+    // ✅ Streak logic — only increases ONCE per calendar day (like Duolingo)
+    const today     = new Date().toDateString()      // e.g. "Sat Apr 05 2025"
     const yesterday = new Date(Date.now() - 86400000).toDateString()
     const lastDay   = user.lastActiveDate || ''
 
     let newStreak
     if (lastDay === today) {
+      // Already completed a task today — streak stays the same
       newStreak = user.streak
     } else if (lastDay === yesterday) {
+      // Did something yesterday — keep the streak going!
       newStreak = user.streak + 1
     } else if (lastDay === '') {
+      // Very first task ever
       newStreak = 1
     } else {
+      // Missed a day — reset to 1
       newStreak = 1
     }
 
+    // Badge logic
     const newTotal = user.totalDone + 1
     const newLevel = calcLevel(newXP)
     const badges   = [...user.badges]
 
-    if (newXP >= 10    && !badges.includes('First Step'))    badges.push('First Step')
-    if (newXP >= 100   && !badges.includes('XP Grinder'))    badges.push('XP Grinder')
+    if (newXP >= 10   && !badges.includes('First Step'))    badges.push('First Step')
+    if (newXP >= 100  && !badges.includes('XP Grinder'))    badges.push('XP Grinder')
     if (newStreak >= 3 && !badges.includes('Streak Master')) badges.push('Streak Master')
     if (newTotal >= 5  && !badges.includes('On a Roll'))     badges.push('On a Roll')
     if (newLevel >= 2  && !badges.includes('Level Up'))      badges.push('Level Up')
 
-    // ✅ FIX: Mark the task as completed in MongoDB so it persists
+    // ✅ Mark the task as completed in MongoDB
     if (req.body.taskId) {
       await Task.findOneAndUpdate(
         { _id: req.body.taskId, userId: req.user.id },
@@ -65,7 +71,7 @@ exports.completeTask = async (req, res) => {
         level:          newLevel,
         totalDone:      newTotal,
         streak:         newStreak,
-        lastActiveDate: today,
+        lastActiveDate: today,   // ✅ always update to today
         badges,
       },
       { new: true }
