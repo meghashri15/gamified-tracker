@@ -15,8 +15,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-50 text-gray-900">
-        {showConfetti && <Confetti recycle={false} numberOfPieces={300} />}
+<div style={{backgroundColor: '#080b10', minHeight: '100vh', color: '#e2e8f0'}}>        {showConfetti && <Confetti recycle={false} numberOfPieces={300} />}
         <Toaster position="top-right" />
         {user && <Navbar />}
         <Routes>
