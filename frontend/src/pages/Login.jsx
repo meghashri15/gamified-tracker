@@ -10,58 +10,83 @@ export default function Login() {
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [loading,  setLoading]  = useState(false)
+  const [showPw,   setShowPw]   = useState(false)
 
   async function handleLogin() {
-    if (!email.trim())    { toast.error('Please enter your email');    return }
+    if (!email.trim())    { toast.error('Please enter your email'); return }
     if (!password.trim()) { toast.error('Please enter your password'); return }
-    if (!/\S+@\S+\.\S+/.test(email)) { toast.error('Please enter a valid email'); return }
-
     setLoading(true)
     try {
-      await login(email.trim(), password)
-      // Load all user data from backend THEN go to dashboard
+      await login(email.trim().toLowerCase(), password)
       await reloadForUser()
       toast.success('Welcome back! 👋')
       navigate('/')
     } catch (err) {
       const msg = err?.response?.data?.message || ''
-      if (msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('no user')) {
-        toast.error('Account not found. Please register first.')
-      } else if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('incorrect')) {
-        toast.error('Wrong password. Please try again.')
-      } else {
-        toast.error('Login failed. Check your email and password.')
-      }
-    } finally {
-      setLoading(false)
-    }
+      if (msg.includes('not found') || msg.includes('No user')) toast.error('No account found. Please register.')
+      else if (msg.includes('password') || msg.includes('Incorrect')) toast.error('Wrong password. Try again.')
+      else toast.error('Login failed. Check your credentials.')
+    } finally { setLoading(false) }
   }
 
+  const card = { background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(99,179,237,0.15)', borderRadius: '20px', backdropFilter: 'blur(20px)', boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 0 40px rgba(99,179,237,0.05)' }
+  const inputStyle = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(99,179,237,0.15)', borderRadius: '12px', padding: '12px 16px', color: '#e2e8f0', fontSize: '14px', width: '100%', outline: 'none', transition: 'border-color 0.2s' }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
-        <div className="text-center mb-6">
-          <div className="text-3xl mb-2">⚡</div>
-          <h1 className="text-xl font-bold text-gray-900">Welcome back</h1>
-          <p className="text-sm text-gray-500 mt-1">Log in to continue your streak</p>
+    <div style={{ background: '#0a0f1e', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', position: 'relative', overflow: 'hidden' }}>
+      {/* Background orbs */}
+      <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '-100px', right: '-100px', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+
+      <div style={{ ...card, width: '100%', maxWidth: '400px', padding: '40px 36px', position: 'relative' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '12px' }} className="float-anim">⚡</div>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#f1f5f9', marginBottom: '6px' }}>Welcome back</h1>
+          <p style={{ fontSize: '14px', color: '#64748b' }}>Log in to continue your streak</p>
         </div>
-        <div className="flex flex-col gap-3">
-          <input type="email" placeholder="Email" value={email}
-            onChange={e => setEmail(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
-          <input type="password" placeholder="Password" value={password}
-            onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
+            <input type="email" placeholder="you@example.com" value={email}
+              onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = 'rgba(99,179,237,0.5)'}
+              onBlur={e => e.target.style.borderColor = 'rgba(99,179,237,0.15)'} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
+            <div style={{ position: 'relative' }}>
+              <input type={showPw ? 'text' : 'password'} placeholder="••••••••" value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                style={{ ...inputStyle, paddingRight: '44px' }}
+                onFocus={e => e.target.style.borderColor = 'rgba(99,179,237,0.5)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(99,179,237,0.15)'} />
+              <button onClick={() => setShowPw(p => !p)} type="button"
+                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '16px' }}>
+                {showPw ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'right', marginTop: '-6px' }}>
+            <Link to="/forgot-password" style={{ fontSize: '12px', color: '#63b3ed', textDecoration: 'none' }}>
+              Forgot password?
+            </Link>
+          </div>
+
           <button onClick={handleLogin} disabled={loading}
-            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors mt-1">
-            {loading ? 'Logging in…' : 'Log In'}
+            style={{ background: loading ? 'rgba(99,179,237,0.3)' : 'linear-gradient(135deg, #3b82f6, #6366f1)', border: 'none', borderRadius: '12px', padding: '13px', color: '#fff', fontSize: '15px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', boxShadow: loading ? 'none' : '0 0 24px rgba(99,130,246,0.4)', marginTop: '4px' }}>
+            {loading ? 'Signing in…' : 'Sign In →'}
           </button>
         </div>
-        <p className="text-center text-sm text-gray-500 mt-5">
+
+        <p style={{ textAlign: 'center', fontSize: '13px', color: '#64748b', marginTop: '24px' }}>
           No account?{' '}
-          <Link to="/register" className="text-purple-600 hover:underline font-medium">Register</Link>
+          <Link to="/register" style={{ color: '#63b3ed', fontWeight: 600, textDecoration: 'none' }}>Create one</Link>
         </p>
       </div>
     </div>

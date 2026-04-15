@@ -1,34 +1,28 @@
 import { useStore } from '../store/useStore'
 
-const MEDALS = ['🥇', '🥈', '🥉']
+const MEDALS = ['🥇','🥈','🥉']
 
 export default function Leaderboard() {
   const { leaderboard } = useStore()
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <h3 className="font-semibold text-gray-700 text-sm mb-4">Leaderboard</h3>
-      <div className="flex flex-col gap-2">
+    <div style={{ background:'rgba(15,22,41,0.8)', border:'1px solid rgba(99,179,237,0.12)', borderRadius:'16px', padding:'24px', backdropFilter:'blur(8px)' }}>
+      <h3 style={{ fontSize:'13px', fontWeight:700, color:'#63b3ed', marginBottom:'16px', textTransform:'uppercase', letterSpacing:'0.06em' }}>Leaderboard</h3>
+      <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
         {leaderboard.map((entry, i) => (
-          <div
-            key={entry.name}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
-              entry.isYou
-                ? 'bg-purple-50 border border-purple-200'
-                : 'bg-gray-50'
-            }`}
-          >
-            <span className="text-lg w-6 text-center flex-shrink-0">
-              {MEDALS[i] || <span className="text-sm text-gray-400">{i + 1}</span>}
+          <div key={entry.name}
+            style={{ display:'flex', alignItems:'center', gap:'10px', borderRadius:'10px', padding:'10px 12px', transition:'all 0.15s',
+              background: entry.isYou ? 'rgba(99,179,237,0.08)' : 'rgba(255,255,255,0.03)',
+              border: entry.isYou ? '1px solid rgba(99,179,237,0.2)' : '1px solid rgba(255,255,255,0.04)' }}>
+            <span style={{ fontSize:'16px', width:'20px', textAlign:'center', flexShrink:0 }}>
+              {MEDALS[i] || <span style={{ fontSize:'12px', color:'#475569' }}>{i+1}</span>}
             </span>
-            <span className={`flex-1 text-sm font-medium truncate ${
-              entry.isYou ? 'text-purple-600' : 'text-gray-700'
-            }`}>
-              {entry.name} {entry.isYou && '(you)'}
+            <span style={{ flex:1, fontSize:'13px', fontWeight:600, color: entry.isYou ? '#63b3ed' : '#cbd5e1', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+              {entry.name}{entry.isYou && <span style={{ color:'#4a9fc2', fontSize:'11px', marginLeft:'4px' }}>(you)</span>}
             </span>
-            <div className="text-right flex-shrink-0">
-              <div className="text-xs font-semibold text-yellow-500">{entry.xp} XP</div>
-              <div className="text-xs text-gray-400">Lv.{entry.level}</div>
+            <div style={{ textAlign:'right', flexShrink:0 }}>
+              <div style={{ fontSize:'12px', fontWeight:700, color:'#fbbf24' }}>{entry.xp} XP</div>
+              <div style={{ fontSize:'11px', color:'#475569' }}>Lv.{entry.level}</div>
             </div>
           </div>
         ))}

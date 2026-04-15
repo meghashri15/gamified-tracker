@@ -4,12 +4,13 @@ import {
   completeTaskAPI, getStats, getLeaderboard
 } from '../services/api'
 
+// Badge definitions — names MUST match exactly what backend stores
 const BADGES = [
-  { id: 1, name: 'First Step',    desc: 'Complete your first task', condition: (xp)           => xp >= 10,   icon: '🏅' },
-  { id: 2, name: 'On a Roll',     desc: 'Complete 5 tasks',         condition: (_, t)          => t >= 5,    icon: '🔥' },
-  { id: 3, name: 'Level Up',      desc: 'Reach level 2',            condition: (_, __, l)      => l >= 2,    icon: '⬆️' },
-  { id: 4, name: 'Streak Master', desc: '3-day streak',             condition: (_, __, ___, s) => s >= 3,    icon: '📅' },
-  { id: 5, name: 'XP Grinder',    desc: 'Earn 100 XP',              condition: (xp)           => xp >= 100, icon: '💎' },
+  { id: 1, name: 'First Step',    desc: 'Complete your first task', icon: '🏅' },
+  { id: 2, name: 'On a Roll',     desc: 'Complete 5 tasks',         icon: '🔥' },
+  { id: 3, name: 'Level Up',      desc: 'Reach level 2',            icon: '⬆️' },
+  { id: 4, name: 'Streak Master', desc: 'Get a 3-day streak',       icon: '📅' },
+  { id: 5, name: 'XP Grinder',    desc: 'Earn 100 XP',              icon: '💎' },
 ]
 
 export const useStore = create((set, get) => ({
@@ -18,13 +19,12 @@ export const useStore = create((set, get) => ({
   level:          1,
   streak:         0,
   totalDone:      0,
-  unlockedBadges: [],
+  unlockedBadges: [],   // array of strings e.g. ['First Step', 'Level Up']
   leaderboard:    [],
   badges:         BADGES,
   showConfetti:   false,
   levelledUp:     false,
 
-  // Call this after login/register — loads everything from the real backend
   reloadForUser: async () => {
     try {
       const [stats, tasks, leaderboard] = await Promise.all([
@@ -37,7 +37,7 @@ export const useStore = create((set, get) => ({
         level:          stats.level     || 1,
         streak:         stats.streak    || 0,
         totalDone:      stats.totalDone || 0,
-        unlockedBadges: stats.badges    || [],
+        unlockedBadges: Array.isArray(stats.badges) ? stats.badges : [],
         tasks:          tasks           || [],
         leaderboard:    leaderboard     || [],
       })
@@ -72,19 +72,23 @@ export const useStore = create((set, get) => ({
 
     try {
       const updatedUser = await completeTaskAPI(id, task.xpValue || 10)
-      const levelled = updatedUser.level > get().level
+      const levelled    = updatedUser.level > get().level
+
+      // ✅ updatedUser.badges is an array of strings from backend
+      const newBadges = Array.isArray(updatedUser.badges) ? updatedUser.badges : []
 
       set(state => ({
         tasks:          state.tasks.map(t => (t._id || t.id) === id ? { ...t, completed: true } : t),
-        xp:             updatedUser.xp,
-        level:          updatedUser.level,
-        streak:         updatedUser.streak,
-        totalDone:      updatedUser.totalDone,
-        unlockedBadges: updatedUser.badges || [],
+        xp:             updatedUser.xp         || 0,
+        level:          updatedUser.level      || 1,
+        streak:         updatedUser.streak     || 0,
+        totalDone:      updatedUser.totalDone  || 0,
+        unlockedBadges: newBadges,
         showConfetti:   true,
         levelledUp:     levelled,
       }))
 
+      // Refresh leaderboard after completing
       const lb = await getLeaderboard()
       set({ leaderboard: lb })
 

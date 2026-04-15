@@ -1,14 +1,28 @@
 @import "tailwindcss";
 
 html, body, #root {
-  background-color: #080b10 !important;
+  background: #0a0f1e !important;
   min-height: 100vh;
-  color: #e2e8f0;
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
 }
 
+/* Neon glow animations */
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(56,189,248,0.4); }
-  50%       { box-shadow: 0 0 20px rgba(56,189,248,0.85); }
+  0%, 100% { box-shadow: 0 0 8px rgba(99,179,237,0.35); }
+  50%       { box-shadow: 0 0 22px rgba(99,179,237,0.7); }
 }
-.glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.glow-pulse   { animation: glow-pulse 2.5s ease-in-out infinite; }
+.float-anim   { animation: float 4s ease-in-out infinite; }
+
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: #0a0f1e; }
+::-webkit-scrollbar-thumb { background: rgba(99,179,237,0.25); border-radius: 4px; }

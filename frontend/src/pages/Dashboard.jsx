@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import XPBar from '../components/XPBar'
 import StreakCounter from '../components/StreakCounter'
@@ -7,108 +8,63 @@ import BadgeGrid from '../components/BadgeGrid'
 import Leaderboard from '../components/Leaderboard'
 import { getUser } from '../services/api'
 
-const TUTORIAL_STEPS = [
-  { icon: '✅', title: 'Add tasks',     desc: 'Go to the Tasks page and add things you want to get done today.' },
-  { icon: '⚡', title: 'Earn XP',       desc: 'Complete a task to earn +10 XP. XP fills your level bar.' },
-  { icon: '🎮', title: 'Level up',      desc: "Earn enough XP and you'll level up! Each level needs more XP." },
-  { icon: '🔥', title: 'Build streaks', desc: 'Complete at least one task every day to maintain your streak.' },
-  { icon: '🏅', title: 'Unlock badges', desc: 'Hit milestones to unlock achievement badges. Can you get them all?' },
-]
-
-function TutorialModal({ onClose }) {
-  const [step, setStep] = useState(0)
-  const isLast = step === TUTORIAL_STEPS.length - 1
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-xl border border-gray-100">
-        <div className="text-center mb-6">
-          <div className="text-5xl mb-3">{TUTORIAL_STEPS[step].icon}</div>
-          <h2 className="text-xl font-bold mb-2">{TUTORIAL_STEPS[step].title}</h2>
-          <p className="text-gray-500 text-sm">{TUTORIAL_STEPS[step].desc}</p>
-        </div>
-        <div className="flex justify-center gap-2 mb-6">
-          {TUTORIAL_STEPS.map((_, i) => (
-            <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i === step ? 'bg-purple-600' : 'bg-gray-200'}`} />
-          ))}
-        </div>
-        <div className="flex gap-3">
-          {step > 0 && (
-            <button onClick={() => setStep(s => s - 1)}
-              className="flex-1 border border-gray-200 rounded-xl py-2 text-sm font-medium hover:bg-gray-50 transition-colors">
-              Back
-            </button>
-          )}
-          <button onClick={() => isLast ? onClose() : setStep(s => s + 1)}
-            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-2 text-sm font-medium transition-colors">
-            {isLast ? "Let's go! 🚀" : 'Next'}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
 export default function Dashboard() {
   const { xp, level, streak, totalDone, reloadForUser } = useStore()
   const user = getUser()
-
-  // ✅ Reload data from backend every time dashboard mounts
   useEffect(() => { reloadForUser() }, [])
 
   const isNewUser = xp === 0 && totalDone === 0
-  const tutorialKey = `gp-tutorial-${user?.email}`
-  const [showTutorial, setShowTutorial] = useState(false)
-
-  useEffect(() => {
-    if (isNewUser && !localStorage.getItem(tutorialKey)) {
-      setShowTutorial(true)
-    }
-  }, [isNewUser])
-
-  const closeTutorial = () => {
-    localStorage.setItem(tutorialKey, 'seen')
-    setShowTutorial(false)
-  }
 
   const stats = [
-    { label: 'Tasks Done',    value: totalDone, icon: '✅', color: 'text-green-500' },
-    { label: 'Total XP',      value: xp,        icon: '⚡', color: 'text-yellow-500' },
-    { label: 'Current Level', value: level,     icon: '🎮', color: 'text-purple-500' },
-    { label: 'Day Streak',    value: streak,    icon: '🔥', color: 'text-orange-500' },
+    { label: 'Tasks Done',    value: totalDone, icon: '✅', color: '#34d399', glow: 'rgba(52,211,153,0.25)',  bg: 'rgba(52,211,153,0.07)'  },
+    { label: 'Total XP',      value: xp,        icon: '⚡', color: '#fbbf24', glow: 'rgba(251,191,36,0.25)',  bg: 'rgba(251,191,36,0.07)'  },
+    { label: 'Current Level', value: level,     icon: '🎮', color: '#a78bfa', glow: 'rgba(167,139,250,0.25)', bg: 'rgba(167,139,250,0.07)' },
+    { label: 'Day Streak',    value: streak,    icon: '🔥', color: '#fb923c', glow: 'rgba(251,146,60,0.25)',  bg: 'rgba(251,146,60,0.07)'  },
   ]
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
-      <AnimatePresence>{showTutorial && <TutorialModal onClose={closeTutorial} />}</AnimatePresence>
+    <div style={{ background: '#0a0f1e', minHeight: '100vh', padding: '28px 16px 48px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold leading-snug">
-          {isNewUser ? `Welcome, ${user?.name}! 👋` : `Welcome back, ${user?.name}! 👋`}
-        </h1>
-        <p className="text-gray-500 mt-1 text-sm sm:text-base">
-          {isNewUser ? 'Start completing tasks to earn XP and level up!' : `Keep going — you're on a ${streak}-day streak!`}
-        </p>
-      </motion.div>
+        {/* Welcome header */}
+        <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
+          style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 800, color: '#f1f5f9', marginBottom: '6px' }}>
+              {isNewUser ? `Hey ${user?.name}! 👋` : `Welcome back, ${user?.name}! 👋`}
+            </h1>
+            <p style={{ fontSize: '14px', color: '#64748b' }}>
+              {isNewUser ? 'Complete your first task to earn XP and start your streak!' : `You're on a ${streak}-day streak — keep it going! 🔥`}
+            </p>
+          </div>
+          <Link to="/tasks"
+            style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', border: 'none', borderRadius: '12px', padding: '10px 20px', color: '#fff', fontSize: '13px', fontWeight: 700, textDecoration: 'none', display: 'inline-block', boxShadow: '0 0 20px rgba(99,130,246,0.35)', whiteSpace: 'nowrap' }}>
+            + Add Tasks
+          </Link>
+        </motion.div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        {stats.map((s, i) => (
-          <motion.div key={s.label}
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-            className="bg-white rounded-2xl p-4 sm:p-5 text-center shadow-sm border border-gray-100">
-            <div className="text-2xl sm:text-3xl mb-1">{s.icon}</div>
-            <div className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</div>
-            <div className="text-xs text-gray-500 mt-1">{s.label}</div>
-          </motion.div>
-        ))}
-      </div>
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+          {stats.map((s, i) => (
+            <motion.div key={s.label}
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+              style={{ background: s.bg, border: `1px solid ${s.glow}`, borderRadius: '16px', padding: '20px 16px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
+              <div style={{ fontSize: '26px', marginBottom: '8px' }}>{s.icon}</div>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: s.color, textShadow: `0 0 12px ${s.glow}`, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px', fontWeight: 500 }}>{s.label}</div>
+            </motion.div>
+          ))}
+        </div>
 
-      <div className="mb-6"><XPBar /></div>
+        {/* XP Bar */}
+        <div style={{ marginBottom: '20px' }}><XPBar /></div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <StreakCounter />
-        <BadgeGrid />
-        <Leaderboard />
+        {/* Bottom row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+          <StreakCounter />
+          <BadgeGrid />
+          <Leaderboard />
+        </div>
       </div>
     </div>
   )

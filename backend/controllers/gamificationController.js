@@ -9,9 +9,36 @@ function calcLevel(xp) {
   return 5
 }
 
+// Recalculate which badges a user should have based on their current stats
+// This is the SINGLE source of truth for badge logic
+function calcBadges(xp, totalDone, level, streak) {
+  const earned = []
+  if (xp        >= 10) earned.push('First Step')
+  if (totalDone >= 5)  earned.push('On a Roll')
+  if (level     >= 2)  earned.push('Level Up')
+  if (streak    >= 3)  earned.push('Streak Master')
+  if (xp        >= 100) earned.push('XP Grinder')
+  return earned
+}
+
 exports.getStats = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password')
+
+    // ✅ Always recalculate badges on every stats fetch
+    // This fixes any user whose badges array got corrupted or is out of sync
+    const correctBadges = calcBadges(user.xp, user.totalDone, user.level, user.streak)
+
+    // Only update DB if badges are out of sync (avoids unnecessary writes)
+    const badgesChanged =
+      correctBadges.length !== user.badges.length ||
+      correctBadges.some(b => !user.badges.includes(b))
+
+    if (badgesChanged) {
+      await User.findByIdAndUpdate(req.user.id, { badges: correctBadges })
+      user.badges = correctBadges
+    }
+
     res.json(user)
   } catch (err) {
     res.status(500).json({ message: 'Server error' })
@@ -24,36 +51,22 @@ exports.completeTask = async (req, res) => {
     const xpGain = req.body.xpValue || 10
     const newXP  = user.xp + xpGain
 
-    // ✅ Streak logic — only increases ONCE per calendar day (like Duolingo)
-    const today     = new Date().toDateString()      // e.g. "Sat Apr 05 2025"
+    // Streak logic — only increases ONCE per calendar day
+    const today     = new Date().toDateString()
     const yesterday = new Date(Date.now() - 86400000).toDateString()
     const lastDay   = user.lastActiveDate || ''
 
     let newStreak
-    if (lastDay === today) {
-      // Already completed a task today — streak stays the same
-      newStreak = user.streak
-    } else if (lastDay === yesterday) {
-      // Did something yesterday — keep the streak going!
-      newStreak = user.streak + 1
-    } else if (lastDay === '') {
-      // Very first task ever
-      newStreak = 1
-    } else {
-      // Missed a day — reset to 1
-      newStreak = 1
-    }
+    if (lastDay === today)      newStreak = user.streak          // already done today
+    else if (lastDay === yesterday) newStreak = user.streak + 1  // kept streak going
+    else if (lastDay === '')    newStreak = 1                     // first task ever
+    else                        newStreak = 1                     // missed a day
 
-    // Badge logic
     const newTotal = user.totalDone + 1
     const newLevel = calcLevel(newXP)
-    const badges   = [...user.badges]
 
-    if (newXP >= 10   && !badges.includes('First Step'))    badges.push('First Step')
-    if (newXP >= 100  && !badges.includes('XP Grinder'))    badges.push('XP Grinder')
-    if (newStreak >= 3 && !badges.includes('Streak Master')) badges.push('Streak Master')
-    if (newTotal >= 5  && !badges.includes('On a Roll'))     badges.push('On a Roll')
-    if (newLevel >= 2  && !badges.includes('Level Up'))      badges.push('Level Up')
+    // ✅ Use calcBadges — single source of truth, no stale array issues
+    const newBadges = calcBadges(newXP, newTotal, newLevel, newStreak)
 
     // ✅ Mark the task as completed in MongoDB
     if (req.body.taskId) {
@@ -71,14 +84,15 @@ exports.completeTask = async (req, res) => {
         level:          newLevel,
         totalDone:      newTotal,
         streak:         newStreak,
-        lastActiveDate: today,   // ✅ always update to today
-        badges,
+        lastActiveDate: today,
+        badges:         newBadges,
       },
       { new: true }
     ).select('-password')
 
     res.json(updated)
   } catch (err) {
+    console.error('completeTask error:', err)
     res.status(500).json({ message: 'Server error' })
   }
 }

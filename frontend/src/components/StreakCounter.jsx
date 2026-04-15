@@ -4,17 +4,17 @@ export default function StreakCounter() {
   const { streak } = useStore()
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col items-center justify-center text-center min-h-[140px]">
-      <div className="text-4xl mb-2">🔥</div>
-      <div className="text-3xl font-bold text-orange-500">{streak}</div>
-      <div className="text-sm text-gray-500 mt-1">Day Streak</div>
+    <div style={{ background:'rgba(15,22,41,0.8)', border:'1px solid rgba(251,146,60,0.15)', borderRadius:'16px', padding:'24px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', backdropFilter:'blur(8px)' }}>
+      <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔥</div>
+      <div style={{ fontSize: '42px', fontWeight: 800, color: '#fb923c', textShadow: '0 0 16px rgba(251,146,60,0.5)', lineHeight: 1 }}>{streak}</div>
+      <div style={{ fontSize: '13px', color: '#64748b', marginTop: '6px', fontWeight: 500 }}>Day Streak</div>
       {streak >= 3 && (
-        <div className="mt-2 text-xs bg-orange-50 text-orange-500 px-3 py-1 rounded-full font-medium">
+        <div style={{ marginTop: '12px', fontSize: '12px', background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.2)', color: '#fb923c', padding: '4px 12px', borderRadius: '100px', fontWeight: 600 }}>
           🏅 Streak Master!
         </div>
       )}
       {streak === 0 && (
-        <p className="text-xs text-gray-400 mt-2">Complete a task today to start!</p>
+        <p style={{ fontSize: '12px', color: '#475569', marginTop: '8px' }}>Complete a task today to start!</p>
       )}
     </div>
   )
